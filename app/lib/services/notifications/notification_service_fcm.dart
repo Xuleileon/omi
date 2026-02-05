@@ -66,8 +66,8 @@ class _FCMNotificationService implements NotificationInterface {
         // Channel groups are only visual and are not required
         channelGroups: [
           NotificationChannelGroup(
-            channelGroupKey: channel.channelKey!,
-            channelGroupName: channel.channelName!,
+            channelGroupKey: 'channel_group_key',
+            channelGroupName: 'Omi Notifications',
           )
         ],
         debug: false);
