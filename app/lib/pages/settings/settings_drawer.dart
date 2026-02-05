@@ -8,6 +8,7 @@ import 'package:omi/pages/persona/persona_provider.dart';
 import 'package:omi/services/auth_service.dart';
 import 'package:omi/pages/settings/developer.dart';
 import 'package:omi/pages/settings/notifications_settings_page.dart';
+import 'package:omi/pages/settings/recording_settings_page.dart';
 import 'package:omi/pages/settings/profile.dart';
 import 'package:omi/pages/settings/integrations_page.dart';
 import 'package:omi/pages/settings/usage_page.dart';
@@ -339,6 +340,18 @@ class _SettingsDrawerState extends State<SettingsDrawer> {
                 },
               ),
               const Divider(height: 1, color: Color(0xFF3C3C43)),
+              // 24-Hour Recording Settings (mobile only)
+              if (!PlatformService.isDesktop)
+                _buildSettingsItem(
+                  title: 'Recording',
+                  icon: const FaIcon(FontAwesomeIcons.microphone, color: Color(0xFF8E8E93), size: 20),
+                  showBetaTag: true,
+                  onTap: () {
+                    routeToPage(context, const RecordingSettingsPage());
+                  },
+                ),
+              if (!PlatformService.isDesktop)
+                const Divider(height: 1, color: Color(0xFF3C3C43)),
               Consumer<UsageProvider>(
                 builder: (context, usageProvider, child) {
                   final isUnlimited = usageProvider.subscription?.subscription.plan == PlanType.unlimited;
@@ -387,7 +400,7 @@ class _SettingsDrawerState extends State<SettingsDrawer> {
               const Divider(height: 1, color: Color(0xFF3C3C43)),
               _buildSettingsItem(
                 title: context.l10n.offlineSync,
-                icon: const FaIcon(FontAwesomeIcons.solidCloud, color: Color(0xFF8E8E93), size: 20),
+                icon: const FaIcon(FontAwesomeIcons.cloud, color: Color(0xFF8E8E93), size: 20),
                 onTap: () {
                   Navigator.of(context).push(
                     MaterialPageRoute(
