@@ -1,8 +1,9 @@
 import os
 from typing import List
+import requests
 
 from langchain_core.output_parsers import PydanticOutputParser
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from langchain_openai import ChatOpenAI
 import tiktoken
 
 from models.conversation import Structured
@@ -11,79 +12,121 @@ from utils.llm.usage_tracker import get_usage_callback
 # Get the usage tracking callback
 _usage_callback = get_usage_callback()
 
-# Base models for general use
-llm_mini = ChatOpenAI(model='gpt-4.1-mini', callbacks=[_usage_callback])
+# Custom API configuration
+_api_key = os.environ.get('OPENAI_API_KEY')
+_api_base = os.environ.get('OPENAI_API_BASE')
+_model = os.environ.get('OPENAI_MODEL')
+
+# Base models for general use - using custom endpoint
+llm_mini = ChatOpenAI(model=_model, api_key=_api_key, base_url=_api_base, callbacks=[_usage_callback])
 llm_mini_stream = ChatOpenAI(
-    model='gpt-4.1-mini',
+    model=_model,
+    api_key=_api_key,
+    base_url=_api_base,
     streaming=True,
-    stream_options={"include_usage": True},
     callbacks=[_usage_callback],
 )
-llm_large = ChatOpenAI(model='o1-preview', callbacks=[_usage_callback])
+llm_large = ChatOpenAI(model=_model, api_key=_api_key, base_url=_api_base, callbacks=[_usage_callback])
 llm_large_stream = ChatOpenAI(
-    model='o1-preview',
+    model=_model,
+    api_key=_api_key,
+    base_url=_api_base,
     streaming=True,
-    stream_options={"include_usage": True},
     temperature=1,
     callbacks=[_usage_callback],
 )
-llm_high = ChatOpenAI(model='o4-mini', callbacks=[_usage_callback])
+llm_high = ChatOpenAI(model=_model, api_key=_api_key, base_url=_api_base, callbacks=[_usage_callback])
 llm_high_stream = ChatOpenAI(
-    model='o4-mini',
+    model=_model,
+    api_key=_api_key,
+    base_url=_api_base,
     streaming=True,
-    stream_options={"include_usage": True},
     temperature=1,
     callbacks=[_usage_callback],
 )
-llm_medium = ChatOpenAI(model='gpt-4.1', callbacks=[_usage_callback])
+llm_medium = ChatOpenAI(model=_model, api_key=_api_key, base_url=_api_base, callbacks=[_usage_callback])
 llm_medium_stream = ChatOpenAI(
-    model='gpt-4.1',
+    model=_model,
+    api_key=_api_key,
+    base_url=_api_base,
     streaming=True,
-    stream_options={"include_usage": True},
     callbacks=[_usage_callback],
 )
-llm_medium_experiment = ChatOpenAI(model='gpt-5.1', callbacks=[_usage_callback])
+llm_medium_experiment = ChatOpenAI(model=_model, api_key=_api_key, base_url=_api_base, callbacks=[_usage_callback])
 
 # Specialized models for agentic workflows
-llm_agent = ChatOpenAI(model='gpt-5.1', callbacks=[_usage_callback])
+llm_agent = ChatOpenAI(model=_model, api_key=_api_key, base_url=_api_base, callbacks=[_usage_callback])
 llm_agent_stream = ChatOpenAI(
-    model='gpt-5.1',
+    model=_model,
+    api_key=_api_key,
+    base_url=_api_base,
     streaming=True,
-    stream_options={"include_usage": True},
     callbacks=[_usage_callback],
 )
 llm_persona_mini_stream = ChatOpenAI(
     temperature=0.8,
-    model="google/gemini-flash-1.5-8b",
-    api_key=os.environ.get('OPENROUTER_API_KEY'),
-    base_url="https://openrouter.ai/api/v1",
-    default_headers={"X-Title": "Omi Chat"},
+    model=_model,
+    api_key=_api_key,
+    base_url=_api_base,
     streaming=True,
-    stream_options={"include_usage": True},
     callbacks=[_usage_callback],
 )
 llm_persona_medium_stream = ChatOpenAI(
     temperature=0.8,
-    model="anthropic/claude-3.5-sonnet",
-    api_key=os.environ.get('OPENROUTER_API_KEY'),
-    base_url="https://openrouter.ai/api/v1",
-    default_headers={"X-Title": "Omi Chat"},
+    model=_model,
+    api_key=_api_key,
+    base_url=_api_base,
     streaming=True,
-    stream_options={"include_usage": True},
     callbacks=[_usage_callback],
 )
 
-# Gemini models for large context analysis
+# Gemini models for large context analysis - also use custom endpoint
 llm_gemini_flash = ChatOpenAI(
     temperature=0.7,
-    model="google/gemini-3-flash-preview",
-    api_key=os.environ.get('OPENROUTER_API_KEY'),
-    base_url="https://openrouter.ai/api/v1",
-    default_headers={"X-Title": "Omi Wrapped"},
+    model=_model,
+    api_key=_api_key,
+    base_url=_api_base,
     callbacks=[_usage_callback],
 )
 
-embeddings = OpenAIEmbeddings(model="text-embedding-3-large")
+# Doubao (ByteDance) embeddings API
+_doubao_api_key = os.environ.get('DOUBAO_API_KEY')
+_doubao_embedding_url = os.environ.get('DOUBAO_EMBEDDING_URL', 'https://ark.cn-beijing.volces.com/api/v3/embeddings/multimodal')
+_doubao_embedding_model = os.environ.get('DOUBAO_EMBEDDING_MODEL', 'doubao-embedding-vision-251215')
+
+class DoubaoEmbeddings:
+    """Wrapper for Doubao multimodal embedding API"""
+    def _call_api(self, texts: List[str]) -> List[List[float]]:
+        results = []
+        for text in texts:
+            response = requests.post(
+                _doubao_embedding_url,
+                headers={
+                    'Content-Type': 'application/json',
+                    'Authorization': f'Bearer {_doubao_api_key}'
+                },
+                json={
+                    'model': _doubao_embedding_model,
+                    'input': [{'type': 'text', 'text': text}],
+                    'dimensions': 1024,
+                    'encoding_format': 'float'
+                },
+                timeout=30
+            )
+            data = response.json()
+            if 'data' in data and 'embedding' in data['data']:
+                results.append(data['data']['embedding'])
+            else:
+                raise Exception(f"Doubao embedding error: {data}")
+        return results
+
+    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+        return self._call_api(texts)
+
+    def embed_query(self, text: str) -> List[float]:
+        return self._call_api([text])[0]
+
+embeddings = DoubaoEmbeddings()
 parser = PydanticOutputParser(pydantic_object=Structured)
 
 encoding = tiktoken.encoding_for_model('gpt-4')
