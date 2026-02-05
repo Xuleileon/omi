@@ -134,10 +134,20 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             minifyEnabled true
             shrinkResources true
+            // Disable Crashlytics mapping file upload (placeholder config)
+            firebaseCrashlytics {
+                mappingFileUploadEnabled false
+                nativeSymbolUploadEnabled false
+            }
         }
         debug{
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-            minifyEnabled true
+            minifyEnabled false
+            shrinkResources false
+            // Disable Crashlytics mapping file upload (placeholder config)
+            firebaseCrashlytics {
+                mappingFileUploadEnabled false
+                nativeSymbolUploadEnabled false
+            }
         }
     }
 
