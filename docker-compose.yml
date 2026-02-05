@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - "8000:8080"
+    env_file:
+      - backend/.env
+    environment:
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/google-credentials.json
+      - GOOGLE_CLOUD_PROJECT=my-omi-project-43888
+      - GCLOUD_PROJECT=my-omi-project-43888
+      - HF_HOME=/root/.cache/huggingface
+    volumes:
+      - /c/Users/dingx/AppData/Roaming/gcloud/application_default_credentials.json:/app/google-credentials.json:ro
+      - /c/Users/dingx/.cache/huggingface:/root/.cache/huggingface:ro
