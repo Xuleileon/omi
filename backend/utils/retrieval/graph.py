@@ -5,7 +5,7 @@ from typing import List, Optional, AsyncGenerator, Tuple
 
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain_core.messages import SystemMessage, AIMessage, HumanMessage
-from langchain_openai import ChatOpenAI
+# ChatOpenAI imported via utils.llm.clients
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.constants import END
 from langgraph.graph import START, StateGraph
@@ -42,9 +42,7 @@ from utils.other.endpoints import timeit
 from utils.app_integrations import get_github_docs_content
 from utils.retrieval.agentic import execute_agentic_chat_stream
 from utils.observability.langsmith import get_chat_tracer_callbacks
-
-model = ChatOpenAI(model="gpt-4.1-mini")
-llm_medium_stream = ChatOpenAI(model='gpt-4.1', streaming=True)
+from utils.llm.clients import llm_mini as model, llm_medium_stream
 
 
 class StructuredFilters(TypedDict):
