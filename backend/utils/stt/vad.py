@@ -11,8 +11,31 @@ from database import redis_db
 
 torch.set_num_threads(1)
 torch.hub.set_dir('pretrained_models')
-model, utils = torch.hub.load(repo_or_dir='snakers4/silero-vad', model='silero_vad')
-(get_speech_timestamps, save_audio, read_audio, VADIterator, collect_chunks) = utils
+
+# Lazy load VAD model to avoid blocking startup
+_model = None
+_utils = None
+
+def _load_vad_model():
+    global _model, _utils
+    if _model is None:
+        try:
+            _model, _utils = torch.hub.load(
+                repo_or_dir='snakers4/silero-vad',
+                model='silero_vad',
+                trust_repo=True
+            )
+        except Exception as e:
+            print(f"Warning: Failed to load VAD model: {e}")
+            _model = False  # Mark as failed
+    return _model, _utils
+
+def get_vad_utils():
+    model, utils = _load_vad_model()
+    if model is False or utils is None:
+        return None, None, None, None, None, None
+    (get_speech_timestamps, save_audio, read_audio, VADIterator, collect_chunks) = utils
+    return model, get_speech_timestamps, save_audio, read_audio, VADIterator, collect_chunks
 
 
 class SpeechState(str, Enum):
@@ -50,6 +73,9 @@ def is_speech_present(data, vad_iterator, window_size_samples=256):
 
 
 def is_audio_empty(file_path, sample_rate=8000):
+    model, get_speech_timestamps, save_audio, read_audio, VADIterator, collect_chunks = get_vad_utils()
+    if model is None:
+        return False  # If VAD not available, assume not empty
     wav = read_audio(file_path)
     timestamps = get_speech_timestamps(wav, model, sampling_rate=sample_rate)
     if len(timestamps) == 1:
