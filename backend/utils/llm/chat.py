@@ -78,13 +78,18 @@ def requires_context(question: str) -> bool:
 
     User's Question:
     {question}
+
+    Respond with only "true" or "false".
     '''
-    with_parser = llm_mini.with_structured_output(RequiresContext)
-    response: RequiresContext = with_parser.invoke(prompt)
     try:
+        with_parser = llm_mini.with_structured_output(RequiresContext)
+        response: RequiresContext = with_parser.invoke(prompt)
         return response.value
-    except ValidationError:
-        return False
+    except Exception as e:
+        # Fallback for proxy APIs that don't support structured output
+        print(f"requires_context structured output failed, using plain text: {e}")
+        text_response = llm_mini.invoke(prompt).content.strip().lower()
+        return text_response == 'true' or 'true' in text_response
 
 
 class IsAnOmiQuestion(BaseModel):
@@ -141,16 +146,18 @@ def retrieve_is_an_omi_question(question: str) -> bool:
     User's Question:
     {question}
     
-    Is this asking about the Omi/Friend app product itself?
+    Is this asking about the Omi/Friend app product itself? Respond with only "true" or "false".
     '''.replace(
         '    ', ''
     ).strip()
-    with_parser = llm_mini.with_structured_output(IsAnOmiQuestion)
-    response: IsAnOmiQuestion = with_parser.invoke(prompt)
     try:
+        with_parser = llm_mini.with_structured_output(IsAnOmiQuestion)
+        response: IsAnOmiQuestion = with_parser.invoke(prompt)
         return response.value
-    except ValidationError:
-        return False
+    except Exception as e:
+        print(f"retrieve_is_an_omi_question structured output failed, using plain text: {e}")
+        text_response = llm_mini.invoke(prompt).content.strip().lower()
+        return text_response == 'true' or 'true' in text_response
 
 
 class IsFileQuestion(BaseModel):
@@ -173,14 +180,18 @@ def retrieve_is_file_question(question: str) -> bool:
 
     User's Question:
     {question}
+
+    Respond with only "true" or "false".
     '''
 
-    with_parser = llm_mini.with_structured_output(IsFileQuestion)
-    response: IsFileQuestion = with_parser.invoke(prompt)
     try:
+        with_parser = llm_mini.with_structured_output(IsFileQuestion)
+        response: IsFileQuestion = with_parser.invoke(prompt)
         return response.value
-    except ValidationError:
-        return False
+    except Exception as e:
+        print(f"retrieve_is_file_question structured output failed, using plain text: {e}")
+        text_response = llm_mini.invoke(prompt).content.strip().lower()
+        return text_response == 'true' or 'true' in text_response
 
 
 def retrieve_context_dates_by_question(question: str, tz: str) -> List[datetime]:
@@ -1031,11 +1042,28 @@ def extract_question_from_conversation(messages: List[Message]) -> str:
     - this day
     - etc.
     </date_in_term>
+
+    Respond with ONLY the question, nothing else. If there is no question, respond with an empty string.
     '''.replace(
         '    ', ''
     ).strip()
     # print(prompt)
-    question = llm_mini.with_structured_output(OutputQuestion).invoke(prompt).question
+    try:
+        # Try structured output first (works with native OpenAI API)
+        question = llm_mini.with_structured_output(OutputQuestion).invoke(prompt).question
+    except Exception as e:
+        # Fallback to plain text response (for proxy APIs that don't support JSON mode)
+        print(f"Structured output failed, using plain text: {e}")
+        response = llm_mini.invoke(prompt).content.strip()
+        # Clean up the response - remove any explanatory text
+        # If response contains explanation, try to extract just the question
+        if response.startswith('"') and response.endswith('"'):
+            response = response[1:-1]
+        # If no question found (e.g., "Hi", "Hello"), return empty
+        if response.lower() in ['', 'empty', 'none', 'no question', 'n/a']:
+            question = ""
+        else:
+            question = response
     # print(question)
     return question
 
