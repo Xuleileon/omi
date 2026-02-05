@@ -6,7 +6,8 @@ import 'package:flutter/widgets.dart';
 
 import 'package:flutter_archive/flutter_archive.dart';
 import 'package:http/http.dart' as http;
-import 'package:mcumgr_flutter/mcumgr_flutter.dart' as mcumgr;
+// mcumgr_flutter disabled on Windows due to cross-drive path issues
+// import 'package:mcumgr_flutter/mcumgr_flutter.dart' as mcumgr;
 import 'package:nordic_dfu/nordic_dfu.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
@@ -20,6 +21,13 @@ import 'package:omi/utils/device.dart';
 import 'package:omi/utils/logger.dart';
 import 'package:omi/utils/manifest/manifest.dart';
 
+// Stub classes for mcumgr when disabled
+class _McumgrImage {
+  final int image;
+  final Uint8List data;
+  _McumgrImage({required this.image, required this.data});
+}
+
 mixin FirmwareMixin<T extends StatefulWidget> on State<T> {
   Map latestFirmwareDetails = {};
   bool isDownloading = false;
@@ -30,10 +38,11 @@ mixin FirmwareMixin<T extends StatefulWidget> on State<T> {
   int installProgress = 1;
   bool isLegacySecureDFU = true;
   List<String> otaUpdateSteps = [];
-  final mcumgr.FirmwareUpdateManagerFactory? managerFactory = mcumgr.FirmwareUpdateManagerFactory();
+  // mcumgr disabled - use stub
+  // final mcumgr.FirmwareUpdateManagerFactory? managerFactory = mcumgr.FirmwareUpdateManagerFactory();
 
-  /// Process ZIP file and return firmware image list
-  Future<List<mcumgr.Image>> processZipFile(Uint8List zipFileData) async {
+  /// Process ZIP file and return firmware image list (stub when mcumgr disabled)
+  Future<List<_McumgrImage>> processZipFile(Uint8List zipFileData) async {
     // Create temporary directory
     final prefix = 'firmware_${Uuid().v4()}';
     final systemTempDir = await getTemporaryDirectory();
@@ -62,11 +71,11 @@ mixin FirmwareMixin<T extends StatefulWidget> on State<T> {
       final manifest = Manifest.fromJson(manifestJson);
 
       // Process firmware files
-      final List<mcumgr.Image> firmwareImages = [];
+      final List<_McumgrImage> firmwareImages = [];
       for (final file in manifest.files) {
         final firmwareFile = File('${destinationDir.path}/${file.file}');
         final firmwareFileData = await firmwareFile.readAsBytes();
-        final image = mcumgr.Image(
+        final image = _McumgrImage(
           image: file.image,
           data: firmwareFileData,
         );
@@ -90,53 +99,12 @@ mixin FirmwareMixin<T extends StatefulWidget> on State<T> {
   }
 
   Future<void> startMCUDfu(BtDevice btDevice, {bool fileInAssets = false, String? zipFilePath}) async {
+    // MCU DFU disabled on Windows - mcumgr_flutter not available
+    Logger.debug('MCU DFU not available - mcumgr_flutter disabled');
     setState(() {
-      isInstalling = true;
+      isInstalling = false;
     });
-    await Provider.of<DeviceProvider>(context, listen: false).prepareDFU();
-    await Future.delayed(const Duration(seconds: 2));
-
-    String firmwareFile = zipFilePath ?? '${(await getApplicationDocumentsDirectory()).path}/firmware.zip';
-    final bytes = await File(firmwareFile).readAsBytes();
-    const configuration = mcumgr.FirmwareUpgradeConfiguration(
-      estimatedSwapTime: Duration(seconds: 0),
-      eraseAppSettings: true,
-      pipelineDepth: 1,
-    );
-    final updateManager = await managerFactory!.getUpdateManager(btDevice.id);
-    final images = await processZipFile(bytes);
-
-    final updateStream = updateManager.setup();
-
-    updateStream.listen((state) {
-      if (state == mcumgr.FirmwareUpgradeState.success) {
-        Logger.debug('update success');
-        setState(() {
-          isInstalling = false;
-          isInstalled = true;
-        });
-      } else {
-        Logger.debug('update state: $state');
-      }
-    });
-
-    updateManager.progressStream.listen((progress) {
-      Logger.debug('progress: $progress');
-      setState(() {
-        installProgress = (progress.bytesSent / progress.imageSize * 100).round();
-      });
-    });
-
-    updateManager.logger.logMessageStream
-        .where((log) => log.level.rawValue > 1) // Filter debug messages
-        .listen((log) {
-      Logger.debug('dfu log: ${log.message}');
-    });
-
-    await updateManager.update(
-      images,
-      configuration: configuration,
-    );
+    throw Exception('MCU DFU not available on this platform. Use Legacy DFU instead.');
   }
 
   Future<void> startLegacyDfu(BtDevice btDevice, {bool fileInAssets = false}) async {
