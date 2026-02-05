@@ -261,6 +261,13 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       });
     }
 
+    // Auto-start 24-hour phone recording if enabled (mobile only)
+    if (!PlatformService.isDesktop) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _autoStartContinuousRecording();
+      });
+    }
+
     super.initState();
   }
 
@@ -279,6 +286,30 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       }
     } catch (e) {
       Logger.debug('[AutoRecord] Error: $e');
+    }
+  }
+
+  /// Auto-start 24-hour continuous recording on mobile (phone mic)
+  Future<void> _autoStartContinuousRecording() async {
+    await Future.delayed(const Duration(seconds: 3));
+
+    // Check if 24-hour recording is enabled
+    if (!SharedPreferencesUtil().continuousRecordingEnabled) return;
+    if (!SharedPreferencesUtil().autoStartRecording) return;
+
+    try {
+      final context = MyApp.navigatorKey.currentContext;
+      if (context == null) return;
+
+      final captureProvider = Provider.of<CaptureProvider>(context, listen: false);
+
+      // Only auto-start if not already recording and no device connected
+      if (captureProvider.recordingState == RecordingState.stop) {
+        Logger.debug('[ContinuousRecord] Auto-starting 24-hour phone recording');
+        await captureProvider.streamRecording();
+      }
+    } catch (e) {
+      Logger.debug('[ContinuousRecord] Error: $e');
     }
   }
 
