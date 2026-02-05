@@ -11,9 +11,11 @@ services:
       - backend/.env
     environment:
       - GOOGLE_APPLICATION_CREDENTIALS=/app/google-credentials.json
-      - GOOGLE_CLOUD_PROJECT=my-omi-project-43888
-      - GCLOUD_PROJECT=my-omi-project-43888
+      - GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT:-my-omi-project}
+      - GCLOUD_PROJECT=${GCLOUD_PROJECT:-my-omi-project}
       - HF_HOME=/root/.cache/huggingface
     volumes:
-      - /c/Users/dingx/AppData/Roaming/gcloud/application_default_credentials.json:/app/google-credentials.json:ro
-      - /c/Users/dingx/.cache/huggingface:/root/.cache/huggingface:ro
+      # Mount credentials from environment variable or default location
+      # Set GOOGLE_CREDENTIALS_PATH in your .env file
+      - ${GOOGLE_CREDENTIALS_PATH:-~/.config/gcloud/application_default_credentials.json}:/app/google-credentials.json:ro
+      - ${HF_CACHE_PATH:-~/.cache/huggingface}:/root/.cache/huggingface:ro
