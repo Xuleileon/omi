@@ -592,6 +592,23 @@ class SharedPreferencesUtil {
 
   bool get locationPermissionRequested => getBool('locationPermissionRequested');
 
+  //----------------------- 24-Hour Recording --------------------------------//
+
+  // Enable 24-hour continuous background recording (phone mic only)
+  bool get continuousRecordingEnabled => getBool('continuousRecordingEnabled');
+
+  set continuousRecordingEnabled(bool value) => saveBool('continuousRecordingEnabled', value);
+
+  // Auto-start recording when app launches
+  bool get autoStartRecording => getBool('autoStartRecording');
+
+  set autoStartRecording(bool value) => saveBool('autoStartRecording', value);
+
+  // Battery threshold to pause recording (default 15%)
+  int get recordingBatteryThreshold => getInt('recordingBatteryThreshold', defaultValue: 15);
+
+  set recordingBatteryThreshold(int value) => saveInt('recordingBatteryThreshold', value);
+
   //--------------------------- Announcements ---------------------------------//
 
   // Last known app version - used to detect app upgrades
