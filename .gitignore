@@ -1,6 +1,7 @@
 *.env
 .env*
 !.env.template
+!.env.docker.template
 *__pycache__/
 *venv/
 libraries/
@@ -42,6 +43,9 @@ dist/
 **/android/app/google-services.json
 **/android/app/src/dev/google-services.json
 **/android/app/src/prod/google-services.json
+**/setup/prebuilt/google-services.json
+**/setup/prebuilt/GoogleService-Info.plist
+**/setup/prebuilt/key.properties
 **/android/app/.cxx/
 
 # iOS specific
@@ -210,3 +214,27 @@ app/macos/DerivedData/
 app/macos/Runner/LocalDev.entitlements
 .env.local
 .backups/
+# AI Assistants (personal configurations)
+.agent/
+.agents/
+.augment/
+.codebuddy/
+.codex/
+.gemini/
+.kiro/
+.opencode/
+.qoder/
+.qwen/
+.trae/
+.windsurf/
+.mcp.json
+skills/
+
+# Cursor IDE
+.cursor/
+!.cursor/README.md
+
+# Claude Code
+.claude/
+!.claude/skills/
+!.claude/skills/README.md
