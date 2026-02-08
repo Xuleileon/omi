@@ -74,7 +74,6 @@ import 'package:omi/utils/debugging/crashlytics_manager.dart';
 import 'package:omi/utils/enums.dart';
 import 'package:omi/utils/l10n_extensions.dart';
 import 'package:omi/utils/logger.dart';
-import 'package:omi/utils/logger.dart';
 import 'package:omi/utils/platform/platform_manager.dart';
 import 'package:omi/utils/platform/platform_service.dart';
 
@@ -123,6 +122,13 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 }
 
 Future _init() async {
+  final initWatch = Stopwatch()..start();
+  int initStep = 0;
+  void mark(String label) {
+    Logger.debug('INIT[$initStep] $label @ ${initWatch.elapsedMilliseconds}ms');
+    initStep += 1;
+  }
+  mark('start');
   // Env
   if (PlatformService.isWindows) {
     // Windows does not support flavors`
@@ -134,47 +140,70 @@ Future _init() async {
       Env.init(DevEnv());
     }
   }
+  mark('env');
 
   FlutterForegroundTask.initCommunicationPort();
+  mark('foregroundTask');
 
   // Service manager
   await ServiceManager.init();
+  mark('serviceManager.init');
 
   // Firebase
   if (Firebase.apps.isEmpty) {
     final options = (PlatformService.isWindows || F.env == Environment.prod)
         ? prod.DefaultFirebaseOptions.currentPlatform
         : dev.DefaultFirebaseOptions.currentPlatform;
-    await Firebase.initializeApp(options: options);
+    try {
+      await Firebase.initializeApp(options: options);
+      mark('firebase.init');
+    } on FirebaseException catch (e) {
+      if (e.code == 'duplicate-app') {
+        Logger.debug('Firebase already initialized (duplicate-app).');
+        mark('firebase.duplicate-app');
+      } else {
+        rethrow;
+      }
+    }
   } else {
     // Firebase may already be initialized by native SDK (macOS)
     debugPrint('Firebase already initialized.');
+    mark('firebase.already');
   }
 
   await PlatformManager.initializeServices();
+  mark('platformManager.init');
   await NotificationService.instance.initialize();
+  mark('notification.init');
 
   // Register FCM background message handler
   if (PlatformManager().isFCMSupported) {
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+    mark('fcm.handler');
   }
 
   await SharedPreferencesUtil.init();
+  mark('sharedPrefs.init');
 
   // DEBUG: Log Firebase Auth state before getIdToken
   Logger.debug('DEBUG main: Before getIdToken - currentUser=${FirebaseAuth.instance.currentUser?.uid}');
   bool isAuth = (await AuthService.instance.getIdToken()) != null;
   Logger.debug('DEBUG main: After getIdToken - isAuth=$isAuth, currentUser=${FirebaseAuth.instance.currentUser?.uid}');
+  mark('auth.getIdToken');
   if (isAuth) PlatformManager.instance.mixpanel.identify();
   if (PlatformService.isMobile) initOpus(await opus_flutter.load());
+  mark('opus.init');
 
   await GrowthbookUtil.init();
+  mark('growthbook.init');
   if (!PlatformService.isWindows) {
     ble.FlutterBluePlus.setOptions(restoreState: true);
     ble.FlutterBluePlus.setLogLevel(ble.LogLevel.info, color: true);
   }
+  mark('ble.options');
 
   await CrashlyticsManager.init();
+  mark('crashlytics.init');
   if (isAuth) {
     PlatformManager.instance.crashReporter.identifyUser(
       FirebaseAuth.instance.currentUser?.email ?? '',
@@ -182,21 +211,26 @@ Future _init() async {
       SharedPreferencesUtil().uid,
     );
   }
+  mark('crashReporter.identify');
   FlutterError.onError = (FlutterErrorDetails details) {
     FirebaseCrashlytics.instance.recordFlutterFatalError(details);
   };
+  mark('flutterError.handler');
 
   PlatformDispatcher.instance.onError = (error, stack) {
     FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
     return true;
   };
+  mark('platformDispatcher.handler');
 
   // Initialize desktop updater
   if (PlatformService.isDesktop) {
     await DesktopUpdateService().initialize();
+    mark('desktopUpdate.init');
   }
 
   await ServiceManager.instance().start();
+  mark('serviceManager.start');
   return;
 }
 

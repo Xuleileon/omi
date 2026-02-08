@@ -269,7 +269,7 @@ class SharedPreferencesUtil {
 
   set conversationSilenceDuration(int value) => saveInt('conversationSilenceDuration', value);
 
-  String get transcriptionModel => getString('transcriptionModel3', defaultValue: 'soniox');
+  String get transcriptionModel => getString('transcriptionModel3', defaultValue: 'deepgram');
 
   set transcriptionModel(String value) => saveString('transcriptionModel3', value);
 

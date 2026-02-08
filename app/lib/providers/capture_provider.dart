@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -10,7 +10,6 @@ import 'package:collection/collection.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:flutter_provider_utilities/flutter_provider_utilities.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import 'package:omi/backend/http/api/conversations.dart';
@@ -24,7 +23,6 @@ import 'package:omi/backend/schema/person.dart';
 import 'package:omi/backend/schema/structured.dart';
 import 'package:omi/backend/schema/transcript_segment.dart';
 import 'package:omi/models/custom_stt_config.dart';
-import 'package:omi/models/stt_provider.dart';
 import 'package:omi/providers/calendar_provider.dart';
 import 'package:omi/providers/conversation_provider.dart';
 import 'package:omi/providers/message_provider.dart';
@@ -33,6 +31,8 @@ import 'package:omi/providers/usage_provider.dart';
 import 'package:omi/services/connectivity_service.dart';
 import 'package:omi/services/services.dart';
 import 'package:omi/services/sockets/transcription_service.dart';
+import 'package:omi/services/vad/ten_vad_engine.dart';
+import 'package:omi/services/vad/ten_vad_gate.dart';
 import 'package:omi/services/wals.dart';
 import 'package:omi/utils/alerts/app_snackbar.dart';
 import 'package:omi/utils/analytics/mixpanel.dart';
@@ -40,7 +40,6 @@ import 'package:omi/utils/debug_log_manager.dart';
 import 'package:omi/utils/enums.dart';
 import 'package:omi/utils/image/image_utils.dart';
 import 'package:omi/utils/l10n_extensions.dart';
-import 'package:omi/utils/logger.dart';
 import 'package:omi/utils/logger.dart';
 import 'package:omi/utils/platform/platform_service.dart';
 import 'package:omi/main.dart';
@@ -134,6 +133,13 @@ class CaptureProvider extends ChangeNotifier
   double _wsSendRateKbps = 0.0;
   DateTime? _metricsLastCalculated;
   Timer? _metricsTimer;
+  // TEN VAD (phone mic gating + end detection)
+  final TenVadEngine _tenVadEngine = TenVadEngine();
+  TenVadGate? _tenVadGate;
+  bool _tenVadReady = false;
+  bool _tenVadAutoStopping = false;
+  Future<void>? _tenVadInitFuture;
+  Future<void> _vadProcessing = Future.value();
   // Reference count for metrics listeners to handle multiple consumers safely.
   // Each widget that needs metrics calls addMetricsListener() in initState
   // and removeMetricsListener() in dispose. This prevents one widget's dispose
@@ -920,6 +926,53 @@ class CaptureProvider extends ChangeNotifier
     _broadcastRecordingState();
   }
 
+  Future<void> _ensureTenVadReady() async {
+    if (!PlatformService.isAndroid) return;
+    if (_tenVadReady) return;
+    _tenVadInitFuture ??= _tenVadEngine.init(hopSize: 256, threshold: 0.5);
+    try {
+      await _tenVadInitFuture;
+      _tenVadGate ??= TenVadGate(_tenVadEngine);
+      _tenVadReady = true;
+    } catch (e) {
+      Logger.error('TEN VAD init failed, fallback to raw streaming: $e');
+      _tenVadReady = false;
+    }
+  }
+
+  Future<void> _handleMicBytes(Uint8List bytes) async {
+    if (_socket?.state != SocketServiceState.connected) {
+      Logger.debug('_handleMicBytes: socket not connected, dropping ${bytes.length} bytes');
+      return;
+    }
+
+    // TEMP: Bypass TEN VAD for debugging - send raw audio directly
+    Logger.debug('_handleMicBytes: sending ${bytes.length} bytes to socket');
+    _socket?.send(bytes);
+    return;
+
+    // Original VAD code (temporarily disabled)
+    if (!_tenVadReady || _tenVadGate == null) {
+      _socket?.send(bytes);
+      return;
+    }
+
+    final decision = await _tenVadGate!.handle(bytes);
+    for (final chunk in decision.sendChunks) {
+      _socket?.send(chunk);
+    }
+
+    if (decision.isSpeech && _tenVadAutoStopping) {
+      _tenVadAutoStopping = false;
+      Logger.debug('TEN VAD detected speech, resuming stream');
+    }
+
+    if (decision.shouldStop && !_tenVadAutoStopping) {
+      _tenVadAutoStopping = true;
+      Logger.debug('TEN VAD detected end of speech, pausing stream (no stop)');
+    }
+  }
+
   /// Sends current geolocation to backend if location services are enabled and permission is granted
   Future<void> _sendCurrentGeolocation() async {
     try {
@@ -959,14 +1012,16 @@ class CaptureProvider extends ChangeNotifier
     // prepare
     await changeAudioRecordProfile(audioCodec: BleAudioCodec.pcm16, sampleRate: 16000);
 
+    await _ensureTenVadReady();
+
     // record
     await ServiceManager.instance().mic.start(onByteReceived: (bytes) {
-      if (_socket?.state == SocketServiceState.connected) {
-        _socket?.send(bytes);
-      }
+      _vadProcessing = _vadProcessing.then((_) => _handleMicBytes(bytes));
     }, onRecording: () {
       updateRecordingState(RecordingState.record);
     }, onStop: () {
+      _tenVadAutoStopping = false;
+      _tenVadGate?.reset();
       updateRecordingState(RecordingState.stop);
     }, onInitializing: () {
       updateRecordingState(RecordingState.initialising);
@@ -976,6 +1031,8 @@ class CaptureProvider extends ChangeNotifier
   stopStreamRecording() async {
     await _cleanupCurrentState();
     ServiceManager.instance().mic.stop();
+    _tenVadAutoStopping = false;
+    _tenVadGate?.reset();
     updateRecordingState(RecordingState.stop);
     await _socket?.stop(reason: 'stop stream recording');
   }

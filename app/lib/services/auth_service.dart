@@ -432,11 +432,16 @@ class AuthService {
         }
       }
 
+      // CRITICAL: Get and store the Firebase ID token for API authentication
+      await getIdToken();
+      Logger.debug('Firebase ID token obtained and stored');
+
       Logger.debug('Updated user preferences:');
       Logger.debug('Email: ${SharedPreferencesUtil().email}');
       Logger.debug('Given Name: ${SharedPreferencesUtil().givenName}');
       Logger.debug('Family Name: ${SharedPreferencesUtil().familyName}');
       Logger.debug('UID: ${SharedPreferencesUtil().uid}');
+      Logger.debug('Auth Token Set: ${SharedPreferencesUtil().authToken.isNotEmpty}');
 
       // Restore onboarding state from server
       await _restoreOnboardingState();

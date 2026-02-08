@@ -1,7 +1,5 @@
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:geolocator/geolocator.dart';
@@ -20,31 +18,37 @@ class _ForegroundFirstTaskHandler extends TaskHandler {
   @override
   Future<void> onStart(DateTime timestamp, TaskStarter taskStarter) async {
     Logger.debug("Starting foreground task");
-    _locationInBackground();
+    await _locationInBackground();
   }
 
   Future _locationInBackground() async {
-    if (await Geolocator.isLocationServiceEnabled()) {
-      if (await Geolocator.checkPermission() == LocationPermission.always) {
-        var locationData = await Geolocator.getCurrentPosition();
-        if (_locationUpdatedAt == null ||
-            _locationUpdatedAt!.isBefore(DateTime.now().subtract(const Duration(minutes: 5)))) {
-          Object loc = {
-            "latitude": locationData.latitude,
-            "longitude": locationData.longitude,
-            'altitude': locationData.altitude,
-            'accuracy': locationData.accuracy,
-            'time': locationData.timestamp.toUtc().toIso8601String(),
-          };
+    try {
+      if (await Geolocator.isLocationServiceEnabled()) {
+        if (await Geolocator.checkPermission() == LocationPermission.always) {
+          var locationData = await Geolocator.getCurrentPosition();
+          if (_locationUpdatedAt == null ||
+              _locationUpdatedAt!.isBefore(DateTime.now().subtract(const Duration(minutes: 5)))) {
+            Object loc = {
+              "latitude": locationData.latitude,
+              "longitude": locationData.longitude,
+              'altitude': locationData.altitude,
+              'accuracy': locationData.accuracy,
+              'time': locationData.timestamp.toUtc().toIso8601String(),
+            };
+            FlutterForegroundTask.sendDataToMain(loc);
+            _locationUpdatedAt = DateTime.now();
+          }
+        } else {
+          Object loc = {'error': 'Always location permission is not granted'};
           FlutterForegroundTask.sendDataToMain(loc);
-          _locationUpdatedAt = DateTime.now();
         }
       } else {
-        Object loc = {'error': 'Always location permission is not granted'};
+        Object loc = {'error': 'Location service is not enabled'};
         FlutterForegroundTask.sendDataToMain(loc);
       }
-    } else {
-      Object loc = {'error': 'Location service is not enabled'};
+    } catch (e) {
+      Logger.debug('Foreground location error: $e');
+      Object loc = {'error': e.toString()};
       FlutterForegroundTask.sendDataToMain(loc);
     }
   }
