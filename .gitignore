@@ -244,6 +244,8 @@ skills/
 .cfgd-memory/
 
 # POC projects
+poc/
+talkflow-lite/
 poc/**/build/
 poc/**/.gradle/
 poc/**/gradle/
