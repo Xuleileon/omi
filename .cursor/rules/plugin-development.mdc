@@ -1,15 +1,6 @@
 ---
-description: "Omi plugin app development webhook patterns OAuth integration chat tools memory triggers real-time transcript FastAPI Express"
-globs:
-  - "plugins/**/*.py"
-  - "plugins/**/*.js"
+description: 
 alwaysApply: false
-references:
-  - docs/doc/developer/apps/Introduction.mdx
-  - docs/doc/developer/apps/Integrations.mdx
-  - docs/doc/developer/apps/ChatTools.mdx
-  - plugins/README.md
-  - docs/doc/developer/apps/Oauth.mdx
 ---
 
 # Plugin Development

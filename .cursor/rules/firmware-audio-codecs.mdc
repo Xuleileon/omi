@@ -1,13 +1,6 @@
 ---
-description: "Audio codec Opus PCM Mu-law encoding decoding 16kHz 8kHz sample rate bit depth little-endian packet structure"
-globs:
-  - "omi/**/*.c"
-  - "omi/**/*.h"
-  - "omiGlass/**/*.c"
-  - "omiGlass/**/*.h"
+description: 
 alwaysApply: false
-references:
-  - docs/doc/developer/Protocol.mdx
 ---
 
 # Firmware Audio Codecs
@@ -17,7 +10,7 @@ references:
 ### Codec Types
 
 | Value | Codec | Sample Rate | Bit Depth | Channels |
-|-------|-------|-------------|-----------|----------|
+|----|----|----|-----|----|
 | `0` | PCM | 16 kHz | 16-bit | Mono |
 | `1` | PCM | 8 kHz | 16-bit | Mono |
 | `10` | Mu-law | 16 kHz | 8-bit | Mono |

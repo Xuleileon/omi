@@ -1,6 +1,6 @@
 ---
-description: "Self-verification tools and practices for agents to verify their work before PR"
-alwaysApply: true
+description: 
+alwaysApply: false
 ---
 
 # Verification and Self-Check

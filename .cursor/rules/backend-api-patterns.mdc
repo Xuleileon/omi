@@ -1,11 +1,6 @@
 ---
-description: "FastAPI router patterns endpoint conventions error handling authentication dependency injection Pydantic validation HTTPException"
-globs:
-  - "backend/routers/**/*.py"
+description: 
 alwaysApply: false
-references:
-  - docs/doc/developer/api/overview.mdx
-  - .cursor/docs/API_REFERENCE.md
 ---
 
 # Backend API Patterns

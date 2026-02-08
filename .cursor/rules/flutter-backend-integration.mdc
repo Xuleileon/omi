@@ -1,12 +1,6 @@
 ---
-description: "Flutter HTTP client REST API WebSocket real-time audio streaming authentication error handling retry logic Dio"
-globs:
-  - "app/lib/backend/**/*.dart"
+description: 
 alwaysApply: false
-references:
-  - docs/doc/developer/api/overview.mdx
-  - .cursor/docs/API_REFERENCE.md
-  - app/README.md
 ---
 
 # Flutter Backend Integration

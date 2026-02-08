@@ -1,11 +1,6 @@
 ---
-description: "Backend Python import rules - no in-function imports, follow module hierarchy"
-globs:
-  - "backend/**/*.py"
+description: 
 alwaysApply: false
-references:
-  - .cursor/rules/backend-architecture.mdc
-  - backend/README.md
 ---
 
 # Backend Import Rules

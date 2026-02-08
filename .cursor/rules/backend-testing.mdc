@@ -1,12 +1,6 @@
 ---
-description: "Python pytest testing patterns mocking FastAPI TestClient WebSocket async testing fixtures unit integration tests"
-globs:
-  - "backend/tests/**/*.py"
-  - "backend/**/*test*.py"
+description: 
 alwaysApply: false
-references:
-  - backend/README.md
-  - backend/tests/integration/README.md
 ---
 
 # Backend Testing Patterns

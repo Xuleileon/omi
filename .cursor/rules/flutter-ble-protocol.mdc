@@ -1,12 +1,6 @@
 ---
-description: "Flutter BLE Bluetooth Low Energy device communication audio streaming codec Opus PCM Mu-law packet fragmentation flutter_blue_plus"
-globs:
-  - "app/lib/utils/bluetooth/**/*.dart"
-  - "app/lib/services/**/*ble*.dart"
+description: 
 alwaysApply: false
-references:
-  - docs/doc/developer/Protocol.mdx
-  - app/README.md
 ---
 
 # Flutter BLE Protocol

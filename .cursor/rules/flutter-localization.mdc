@@ -1,10 +1,6 @@
 ---
-description: "Flutter localization - all user-facing strings must use l10n"
-globs:
-  - "app/**/*.dart"
+description: 
 alwaysApply: false
-references:
-  - app/README.md
 ---
 
 # Flutter Localization

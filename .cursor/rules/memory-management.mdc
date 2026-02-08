@@ -1,10 +1,6 @@
 ---
-description: "Memory management - free large objects immediately after use"
-globs:
-  - "backend/**/*.py"
+description: 
 alwaysApply: false
-references:
-  - backend/README.md
 ---
 
 # Memory Management

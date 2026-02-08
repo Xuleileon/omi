@@ -1,11 +1,6 @@
 ---
-description: "Next.js App Router TypeScript API routes server components client components Firebase Auth Firestore Tailwind CSS"
-globs:
-  - "web/**/*.tsx"
-  - "web/**/*.ts"
+description: 
 alwaysApply: false
-references:
-  - web/frontend/README.md
 ---
 
 # Web Next.js Patterns

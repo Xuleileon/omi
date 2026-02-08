@@ -1,13 +1,6 @@
 ---
-description: "BLE Bluetooth Low Energy service characteristics GATT notifications audio streaming packet fragmentation MTU battery device info"
-globs:
-  - "omi/**/*.c"
-  - "omi/**/*.h"
-  - "omiGlass/**/*.c"
-  - "omiGlass/**/*.h"
+description: 
 alwaysApply: false
-references:
-  - docs/doc/developer/Protocol.mdx
 ---
 
 # Firmware BLE Service

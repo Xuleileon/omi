@@ -1,11 +1,6 @@
 ---
-description: "Flutter Dart app structure state management Provider pattern widgets pages services backend integration cross-platform iOS Android macOS Windows"
-globs:
-  - "app/**/*.dart"
+description: 
 alwaysApply: false
-references:
-  - docs/doc/developer/AppSetup.mdx
-  - docs/doc/developer/Protocol.mdx
 ---
 
 # Flutter Architecture

@@ -1,11 +1,6 @@
 ---
-description: "Radix UI Shadcn/ui component patterns Tailwind CSS styling dark mode accessibility responsive design TypeScript"
-globs:
-  - "web/**/*.tsx"
-  - "web/**/*.ts"
+description: 
 alwaysApply: false
-references:
-  - web/frontend/README.md
 ---
 
 # Web UI Components

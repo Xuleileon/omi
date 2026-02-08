@@ -1,11 +1,6 @@
 ---
-description: "Flutter platform-specific code iOS Android macOS Windows CocoaPods Gradle CMake adaptive widgets PlatformManager"
-globs:
-  - "app/**/*.dart"
+description: 
 alwaysApply: false
-references:
-  - docs/doc/developer/AppSetup.mdx
-  - app/README.md
 ---
 
 # Flutter Platform-Specific Code

@@ -1,10 +1,5 @@
 ---
-description: "Automatically update documentation when code changes. Triggers when API endpoints, functions, or classes change. Detects changes in backend/routers/, updates API docs, architecture docs, and syncs between .cursor/ and docs/."
-globs:
-  - "backend/routers/**/*.py"
-  - "backend/utils/**/*.py"
-  - "backend/database/**/*.py"
-  - "app/**/*.dart"
+description: 
 alwaysApply: false
 ---
 

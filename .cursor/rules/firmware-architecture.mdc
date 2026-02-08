@@ -1,14 +1,6 @@
 ---
-description: "Firmware C C++ nRF ESP32 Zephyr RTOS Arduino embedded systems BLE services audio codecs power management"
-globs:
-  - "omi/**/*.c"
-  - "omi/**/*.h"
-  - "omiGlass/**/*.c"
-  - "omiGlass/**/*.h"
+description: 
 alwaysApply: false
-references:
-  - docs/doc/developer/firmware/Compile_firmware.mdx
-  - docs/doc/developer/Protocol.mdx
 ---
 
 # Firmware Architecture

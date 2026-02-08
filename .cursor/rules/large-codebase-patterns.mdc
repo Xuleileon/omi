@@ -1,8 +1,6 @@
 ---
 description: "Best practices for working with large codebases in Cursor"
 alwaysApply: false
-references:
-  - https://cursor.com/docs/cookbook/large-codebases
 ---
 
 # Large Codebase Patterns
@@ -138,7 +136,7 @@ Context from [project management tool]: [ticket description]
 ### Right Tool for the Job
 
 | Tool | Use Case | Strength | Limitation |
-|------|----------|----------|------------|
+|---|----|----|---|
 | **Tab** | Quick, manual changes | Full control, fast | Single-file |
 | **Inline Edit** | Scoped changes in one file | Focused edits | Single-file |
 | **Chat** | Larger, multi-file changes | Auto-gathers context, deep edits | Slower, context-heavy |

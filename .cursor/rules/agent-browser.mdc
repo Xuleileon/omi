@@ -1,11 +1,6 @@
 ---
-description: "Browser automation patterns for web testing, design-to-code, and accessibility auditing"
+description: 
 alwaysApply: false
-globs:
-  - "web/**/*.{tsx,ts,jsx,js}"
-  - "app/**/*web*.dart"
-references:
-  - https://cursor.com/docs/agent/browser
 ---
 
 # Agent Browser

@@ -1,12 +1,6 @@
 ---
-description: "JavaScript Node.js Express plugin patterns webhook handlers OAuth flows API integration error handling security"
-globs:
-  - "plugins/apps-js/**/*.js"
+description: 
 alwaysApply: false
-references:
-  - docs/doc/developer/apps/Introduction.mdx
-  - plugins/apps-js/README.md
-  - plugins/README.md
 ---
 
 # JavaScript Plugin Patterns

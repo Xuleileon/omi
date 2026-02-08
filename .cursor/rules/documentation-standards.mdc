@@ -1,11 +1,6 @@
 ---
-description: "MDX documentation patterns API docs Mermaid diagrams CardGroup Tabs Steps Accordion code examples formatting"
-globs:
-  - "docs/**/*.mdx"
-  - "docs/**/*.md"
+description: 
 alwaysApply: false
-references:
-  - docs/README.md
 ---
 
 # Documentation Standards

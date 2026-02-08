@@ -1,13 +1,6 @@
 ---
-description: "OpenAI LLM client prompt engineering LangGraph agentic system conversation processing memory extraction chat routing tool calling"
-globs:
-  - "backend/utils/llm/**/*.py"
-  - "backend/utils/retrieval/**/*.py"
+description: 
 alwaysApply: false
-references:
-  - docs/doc/developer/backend/chat_system.mdx
-  - docs/doc/developer/backend/backend_deepdive.mdx
-  - backend/README.md
 ---
 
 # Backend LLM Patterns
