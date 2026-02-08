@@ -1,0 +1,50 @@
+# Python virtual environments
+**/venv/
+**/.venv/
+**/env/
+
+# Python cache
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
+.Python
+
+# Test files
+**/tests/
+**/testing/
+
+# IDE
+**/.vscode/
+**/.idea/
+
+# Git
+.git/
+.gitignore
+
+# Temp files
+**/_temp/
+**/*.log
+**/*.tmp
+
+# Documentation
+**/*.md
+**/docs/
+
+# App directory (not needed for backend)
+app/
+
+# Web directory
+web/
+
+# Other directories not needed
+plugins/
+sdks/
+mcp/
+omi/
+omiGlass/
+.cursor/
+.claude/
+.agent/
+.agents/
+skills/

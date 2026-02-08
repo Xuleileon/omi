@@ -4,15 +4,15 @@ services:
   backend:
     build:
       context: .
-      dockerfile: backend/Dockerfile
+      dockerfile: backend/Dockerfile.prod
     ports:
       - "8000:8080"
     env_file:
       - backend/.env
     environment:
       - GOOGLE_APPLICATION_CREDENTIALS=/app/google-credentials.json
-      - GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT:-my-omi-project}
-      - GCLOUD_PROJECT=${GCLOUD_PROJECT:-my-omi-project}
+      - GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT:-my-omi-project-43888}
+      - GCLOUD_PROJECT=${GCLOUD_PROJECT:-my-omi-project-43888}
       - HF_HOME=/root/.cache/huggingface
     volumes:
       # Mount credentials from environment variable or default location

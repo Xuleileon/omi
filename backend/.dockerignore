@@ -1,0 +1,41 @@
+# Python virtual environments
+venv/
+.venv/
+env/
+.env/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Test files
+tests/
+testing/
+*.test.*
+*_test.py
+test_*.py
+
+# IDE
+.vscode/
+.idea/
+
+# Git
+.git/
+.gitignore
+
+# Temp files
+_temp/
+*.log
+*.tmp
+
+# Documentation
+*.md
+docs/
+
+# Windows specific
+*.dll
+*.lib
+*.exe
