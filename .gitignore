@@ -14,6 +14,9 @@ dump/
 node_modules
 yarn.lock
 
+# Docker build cache
+.docker-cache/
+
 # General
 .idea/
 .next/
@@ -238,3 +241,12 @@ skills/
 .claude/
 !.claude/skills/
 !.claude/skills/README.md
+.cfgd-memory/
+
+# POC projects
+poc/**/build/
+poc/**/.gradle/
+poc/**/gradle/
+poc/**/*.iml
+poc/**/.idea/
+google-services.json
