@@ -165,4 +165,6 @@ dependencies {
     implementation 'com.squareup.okhttp3:okhttp:4.12.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.0.0-alpha3'
     implementation 'io.intercom.android:intercom-sdk:latest.release'
+    // TEN VAD uses JNA to call native libten_vad.so
+    implementation 'net.java.dev.jna:jna:5.13.0@aar'
 }

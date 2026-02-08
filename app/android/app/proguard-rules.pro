@@ -56,3 +56,8 @@
 -dontwarn lombok.Generated
 -dontwarn lombok.**
 -keep class lombok.** { *; }
+
+# TEN VAD (JNA + wrapper)
+-dontwarn com.sun.jna.**
+-keep class com.sun.jna.** { *; }
+-keep class com.friend.ios.tenvad.** { *; }
