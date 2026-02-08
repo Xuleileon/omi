@@ -652,15 +652,60 @@ CALENDAR MEETING CONTEXT:
     prompt = ChatPromptTemplate.from_messages([('system', prompt_text)])
     chain = prompt | llm_medium_experiment | parser  # parser is imported from .clients
 
-    response = chain.invoke(
-        {
-            'full_context': full_context,
-            'format_instructions': parser.get_format_instructions(),
-            'language_code': language_code,
-            'started_at': started_at.isoformat(),
-            'tz': tz,
-        }
-    )
+    try:
+        response = chain.invoke(
+            {
+                'full_context': full_context,
+                'format_instructions': parser.get_format_instructions(),
+                'language_code': language_code,
+                'started_at': started_at.isoformat(),
+                'tz': tz,
+            }
+        )
+    except Exception as e:
+        # Fallback for APIs that don't support complex JSON schema (e.g., third-party Claude proxies)
+        print(f"Structured output failed in get_transcript_structure, using plain text fallback: {e}")
+        fallback_prompt = f"""Analyze this content and return a JSON object with these fields:
+- title: A clear headline (≤ 10 words) capturing the main topic
+- overview: A summary of the main topics discussed
+- emoji: A single emoji reflecting the content
+- category: One of: personal, education, health, finance, work, social, travel, entertainment, technology, other
+
+Content language: {language_code}
+Content captured on: {started_at.isoformat()} (timezone: {tz})
+
+Content:
+{full_context}
+
+Return ONLY valid JSON, no markdown code blocks."""
+        
+        fallback_response = llm_medium_experiment.invoke(fallback_prompt)
+        content = fallback_response.content.strip()
+        # Remove markdown code blocks if present
+        if content.startswith('```'):
+            content = content.split('```')[1]
+            if content.startswith('json'):
+                content = content[4:]
+        content = content.strip()
+        
+        import json
+        try:
+            data = json.loads(content)
+            response = Structured(
+                title=data.get('title', 'Untitled'),
+                overview=data.get('overview', ''),
+                emoji=data.get('emoji', '📝'),
+                category=data.get('category', 'other'),
+            )
+        except json.JSONDecodeError:
+            # Ultimate fallback - create minimal structure
+            print(f"JSON parsing failed, using minimal structure")
+            response = Structured(
+                title='Recording',
+                overview=full_context[:500] if full_context else '',
+                emoji='📝',
+                category='other',
+            )
 
     for event in response.events or []:
         if event.duration > 180:

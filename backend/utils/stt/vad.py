@@ -1,91 +1,20 @@
 import os
-from enum import Enum
 
 import numpy as np
 import requests
-import torch
 from fastapi import HTTPException
 from pydub import AudioSegment
 
 from database import redis_db
 
-torch.set_num_threads(1)
-torch.hub.set_dir('pretrained_models')
-
-# Lazy load VAD model to avoid blocking startup
-_model = None
-_utils = None
-
-def _load_vad_model():
-    global _model, _utils
-    if _model is None:
-        try:
-            _model, _utils = torch.hub.load(
-                repo_or_dir='snakers4/silero-vad',
-                model='silero_vad',
-                trust_repo=True
-            )
-        except Exception as e:
-            print(f"Warning: Failed to load VAD model: {e}")
-            _model = False  # Mark as failed
-    return _model, _utils
-
-def get_vad_utils():
-    model, utils = _load_vad_model()
-    if model is False or utils is None:
-        return None, None, None, None, None, None
-    (get_speech_timestamps, save_audio, read_audio, VADIterator, collect_chunks) = utils
-    return model, get_speech_timestamps, save_audio, read_audio, VADIterator, collect_chunks
-
-
-class SpeechState(str, Enum):
-    speech_found = 'speech_found'
-    no_speech = 'no_speech'
-
-
-def is_speech_present(data, vad_iterator, window_size_samples=256):
-    data_int16 = np.frombuffer(data, dtype=np.int16)
-    data_float32 = data_int16.astype(np.float32) / 32768.0
-    has_start, has_end = False, False
-
-    for i in range(0, len(data_float32), window_size_samples):
-        chunk = data_float32[i : i + window_size_samples]
-        if len(chunk) < window_size_samples:
-            break
-        speech_dict = vad_iterator(chunk, return_seconds=False)
-        if speech_dict:
-            # print(speech_dict)
-            vad_iterator.reset_states()
-            return SpeechState.speech_found
-
-            # if not has_start and 'start' in speech_dict:
-            #     has_start = True
-            #
-            # if not has_end and 'end' in speech_dict:
-            #     has_end = True
-
-    # if has_start:
-    #     return SpeechState.speech_found
-    # elif has_end:
-    #     return SpeechState.no_speech
-    vad_iterator.reset_states()
-    return SpeechState.no_speech
-
-
-def is_audio_empty(file_path, sample_rate=8000):
-    model, get_speech_timestamps, save_audio, read_audio, VADIterator, collect_chunks = get_vad_utils()
-    if model is None:
-        return False  # If VAD not available, assume not empty
-    wav = read_audio(file_path)
-    timestamps = get_speech_timestamps(wav, model, sampling_rate=sample_rate)
-    if len(timestamps) == 1:
-        prob_not_speech = ((timestamps[0]['end'] / 1000) - (timestamps[0]['start'] / 1000)) < 1
-        return prob_not_speech
-    return len(timestamps) == 0
-
-
 def vad_is_empty(file_path, return_segments: bool = False, cache: bool = False):
-    """Uses vad_modal/vad.py deployment (Best quality)"""
+    """
+    VAD via hosted microservice.
+
+    NOTE:
+    - This backend intentionally does **not** ship a local Torch VAD to keep the main image small.
+    - Configure `HOSTED_VAD_API_URL` to point to your VAD service (e.g. your own Docker microservice).
+    """
     caching_key = f'vad_is_empty:{file_path}'
     if cache:
         if exists := redis_db.get_generic_cache(caching_key):

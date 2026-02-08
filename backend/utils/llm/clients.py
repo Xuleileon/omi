@@ -90,34 +90,53 @@ llm_gemini_flash = ChatOpenAI(
 )
 
 # Doubao (ByteDance) embeddings API
-_doubao_api_key = os.environ.get('DOUBAO_API_KEY')
+_doubao_api_key = os.environ.get('DOUBAO_API_KEY', '')
 _doubao_embedding_url = os.environ.get('DOUBAO_EMBEDDING_URL', 'https://ark.cn-beijing.volces.com/api/v3/embeddings/multimodal')
 _doubao_embedding_model = os.environ.get('DOUBAO_EMBEDDING_MODEL', 'doubao-embedding-vision-251215')
 
 class DoubaoEmbeddings:
-    """Wrapper for Doubao multimodal embedding API"""
+    """Wrapper for Doubao multimodal embedding API with retry logic"""
     def _call_api(self, texts: List[str]) -> List[List[float]]:
+        if not _doubao_api_key:
+            print("Warning: DOUBAO_API_KEY not set, returning zero embeddings")
+            return [[0.0] * 1024 for _ in texts]
+        
         results = []
         for text in texts:
-            response = requests.post(
-                _doubao_embedding_url,
-                headers={
-                    'Content-Type': 'application/json',
-                    'Authorization': f'Bearer {_doubao_api_key}'
-                },
-                json={
-                    'model': _doubao_embedding_model,
-                    'input': [{'type': 'text', 'text': text}],
-                    'dimensions': 1024,
-                    'encoding_format': 'float'
-                },
-                timeout=30
-            )
-            data = response.json()
-            if 'data' in data and 'embedding' in data['data']:
-                results.append(data['data']['embedding'])
-            else:
-                raise Exception(f"Doubao embedding error: {data}")
+            # Retry up to 3 times with exponential backoff
+            last_error = None
+            for attempt in range(3):
+                try:
+                    response = requests.post(
+                        _doubao_embedding_url,
+                        headers={
+                            'Content-Type': 'application/json',
+                            'Authorization': f'Bearer {_doubao_api_key}'
+                        },
+                        json={
+                            'model': _doubao_embedding_model,
+                            'input': [{'type': 'text', 'text': text}],
+                            'dimensions': 1024,
+                            'encoding_format': 'float'
+                        },
+                        timeout=30
+                    )
+                    data = response.json()
+                    if 'data' in data and 'embedding' in data['data']:
+                        results.append(data['data']['embedding'])
+                        last_error = None
+                        break
+                    else:
+                        last_error = f"Doubao embedding error: {data}"
+                except Exception as e:
+                    last_error = str(e)
+                    if attempt < 2:
+                        import time
+                        time.sleep(1 * (attempt + 1))  # 1s, 2s backoff
+            
+            if last_error:
+                print(f"Doubao embedding failed after 3 retries: {last_error}, returning zero embedding")
+                results.append([0.0] * 1024)
         return results
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:

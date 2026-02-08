@@ -27,6 +27,7 @@ else:
 speech_profiles_bucket = os.getenv('BUCKET_SPEECH_PROFILES')
 postprocessing_audio_bucket = os.getenv('BUCKET_POSTPROCESSING')
 memories_recordings_bucket = os.getenv('BUCKET_MEMORIES_RECORDINGS')
+# Cloud sync bucket for audio storage
 private_cloud_sync_bucket = os.getenv('BUCKET_PRIVATE_CLOUD_SYNC', 'omi-private-cloud-sync')
 syncing_local_bucket = os.getenv('BUCKET_TEMPORAL_SYNC_LOCAL')
 omi_apps_bucket = os.getenv('BUCKET_PLUGINS_LOGOS')
@@ -344,8 +345,10 @@ def upload_audio_chunk(chunk_data: bytes, uid: str, conversation_id: str, timest
         timestamp: Unix timestamp when chunk was recorded
 
     Returns:
-        GCS path of the uploaded chunk
+        GCS path of the uploaded chunk, or empty string if cloud storage disabled
     """
+    if not private_cloud_sync_bucket:
+        return ''  # Cloud storage disabled
     bucket = storage_client.bucket(private_cloud_sync_bucket)
     protection_level = users_db.get_data_protection_level(uid)
 
@@ -369,6 +372,8 @@ def upload_audio_chunk(chunk_data: bytes, uid: str, conversation_id: str, timest
 
 def delete_audio_chunks(uid: str, conversation_id: str, timestamps: List[float]) -> None:
     """Delete audio chunks after they've been merged."""
+    if not private_cloud_sync_bucket:
+        return  # Cloud storage disabled
     bucket = storage_client.bucket(private_cloud_sync_bucket)
     for timestamp in timestamps:
         # Format timestamp to match upload format (3 decimal places)
@@ -388,6 +393,8 @@ def list_audio_chunks(uid: str, conversation_id: str) -> List[dict]:
     Returns:
         List of dicts with chunk info: {'timestamp': float, 'path': str, 'size': int}
     """
+    if not private_cloud_sync_bucket:
+        return []  # Cloud storage disabled
     bucket = storage_client.bucket(private_cloud_sync_bucket)
     prefix = f'chunks/{uid}/{conversation_id}/'
     blobs = bucket.list_blobs(prefix=prefix)
@@ -416,6 +423,8 @@ def list_audio_chunks(uid: str, conversation_id: str) -> List[dict]:
 
 def delete_conversation_audio_files(uid: str, conversation_id: str) -> None:
     """Delete all audio files (chunks and merged) for a conversation."""
+    if not private_cloud_sync_bucket:
+        return  # Cloud storage disabled
     bucket = storage_client.bucket(private_cloud_sync_bucket)
 
     # Delete chunks
@@ -450,8 +459,10 @@ def download_audio_chunks_and_merge(
         sample_rate: Audio sample rate in Hz (default 16000)
 
     Returns:
-        Merged audio bytes (PCM16)
+        Merged audio bytes (PCM16), or empty bytes if cloud storage disabled
     """
+    if not private_cloud_sync_bucket:
+        return b''  # Cloud storage disabled
 
     bucket = storage_client.bucket(private_cloud_sync_bucket)
 
@@ -569,8 +580,10 @@ def get_or_create_merged_audio(
         sample_rate: Audio sample rate in Hz (default 16000)
 
     Returns:
-        Tuple of (audio_data_bytes, was_cached)
+        Tuple of (audio_data_bytes, was_cached), or (empty bytes, False) if cloud storage disabled
     """
+    if not private_cloud_sync_bucket:
+        return b'', False  # Cloud storage disabled
     bucket = storage_client.bucket(private_cloud_sync_bucket)
     cache_path = get_cached_merged_audio_path(uid, conversation_id, audio_file_id)
     cache_blob = bucket.blob(cache_path)
@@ -630,8 +643,10 @@ def get_merged_audio_signed_url(uid: str, conversation_id: str, audio_file_id: s
     Get a signed URL for cached merged audio if it exists and is valid.
 
     Returns:
-        Signed URL valid for 1 hour, or None if cache doesn't exist
+        Signed URL valid for 1 hour, or None if cache doesn't exist or cloud storage disabled
     """
+    if not private_cloud_sync_bucket:
+        return None  # Cloud storage disabled
     bucket = storage_client.bucket(private_cloud_sync_bucket)
     cache_path = get_cached_merged_audio_path(uid, conversation_id, audio_file_id)
     cache_blob = bucket.blob(cache_path)
@@ -658,6 +673,8 @@ def get_merged_audio_signed_url(uid: str, conversation_id: str, audio_file_id: s
 
 def delete_cached_merged_audio(uid: str, conversation_id: str) -> None:
     """Delete all cached merged audio for a conversation."""
+    if not private_cloud_sync_bucket:
+        return  # Cloud storage disabled
     bucket = storage_client.bucket(private_cloud_sync_bucket)
     prefix = f'merged/{uid}/{conversation_id}/'
     for blob in bucket.list_blobs(prefix=prefix):

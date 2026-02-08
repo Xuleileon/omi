@@ -144,6 +144,7 @@ deepgram_nova3_multi_languages = {
     "ja",
     "it",
     "nl",
+    "zh",
 }
 deepgram_nova3_languages = {
     "bg",
@@ -219,8 +220,8 @@ def get_stt_service_for_language(language: str, multi_lang_enabled: bool = True)
             if language in deepgram_nova2_languages:
                 return STTService.deepgram, language, 'nova-2-general'
 
-    # Fallback to deepgram nova-3
-    return STTService.deepgram, 'en', 'nova-3'
+    # Fallback to deepgram nova-3 with auto language detection
+    return STTService.deepgram, 'multi', 'nova-3'
 
 
 async def send_initial_file_path(

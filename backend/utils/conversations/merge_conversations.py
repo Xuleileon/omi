@@ -342,8 +342,10 @@ def _copy_audio_chunks_for_merge(
         new_conversation_id: ID for the new merged conversation
 
     Returns:
-        List of AudioFile objects
+        List of AudioFile objects, or empty list if cloud storage disabled
     """
+    if not private_cloud_sync_bucket:
+        return []  # Cloud storage disabled
     bucket = storage_client.bucket(private_cloud_sync_bucket)
     has_chunks = False
 

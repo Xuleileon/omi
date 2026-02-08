@@ -753,30 +753,52 @@ async def _stream_handler(
 
             # SONIOX
             elif stt_service == STTService.soniox:
-                # For multi-language detection, provide language hints if available
-                hints = None
-                if stt_language == 'multi' and language != 'multi':
-                    # Include the original language as a hint for multi-language detection
-                    hints = [language]
+                # Check if Soniox API key is configured, fallback to Deepgram if not
+                if not os.getenv('SONIOX_API_KEY'):
+                    print(f"SONIOX_API_KEY not set, falling back to Deepgram", uid, session_id)
+                    deepgram_socket = await process_audio_dg(
+                        stream_transcript,
+                        stt_language,
+                        sample_rate,
+                        1,
+                        preseconds=speech_profile_preseconds,
+                        model=stt_model,
+                        keywords=vocabulary[:100] if vocabulary else None,
+                    )
+                    if has_speech_profile:
+                        deepgram_profile_socket = await process_audio_dg(
+                            stream_transcript,
+                            stt_language,
+                            sample_rate,
+                            1,
+                            model=stt_model,
+                            keywords=vocabulary[:100] if vocabulary else None,
+                        )
+                else:
+                    # For multi-language detection, provide language hints if available
+                    hints = None
+                    if stt_language == 'multi' and language != 'multi':
+                        # Include the original language as a hint for multi-language detection
+                        hints = [language]
 
-                soniox_socket = await process_audio_soniox(
-                    stream_transcript,
-                    sample_rate,
-                    stt_language,
-                    uid if include_speech_profile else None,
-                    preseconds=speech_profile_preseconds,
-                    language_hints=hints,
-                )
-
-                # Create a second socket for initial speech profile if needed
-                if has_speech_profile:
-                    soniox_profile_socket = await process_audio_soniox(
+                    soniox_socket = await process_audio_soniox(
                         stream_transcript,
                         sample_rate,
                         stt_language,
                         uid if include_speech_profile else None,
+                        preseconds=speech_profile_preseconds,
                         language_hints=hints,
                     )
+
+                    # Create a second socket for initial speech profile if needed
+                    if has_speech_profile:
+                        soniox_profile_socket = await process_audio_soniox(
+                            stream_transcript,
+                            sample_rate,
+                            stt_language,
+                            uid if include_speech_profile else None,
+                            language_hints=hints,
+                        )
 
             # SPEECHMATICS
             elif stt_service == STTService.speechmatics:
@@ -1757,6 +1779,7 @@ async def _stream_handler(
 
             if dg_socket is not None:
                 if profile_complete or not deepgram_profile_socket:
+                    print(f"[DEBUG] Sending {len(chunk)} bytes to Deepgram", uid, session_id)
                     dg_socket.send(chunk)
                     if deepgram_profile_socket:
                         print('Scheduling delayed close of deepgram_profile_socket', uid, session_id)
@@ -1862,6 +1885,7 @@ async def _stream_handler(
                         audio_ring_buffer.write(data, last_audio_received_time)
 
                     if not use_custom_stt:
+                        print(f"[DEBUG] Received {len(data)} audio bytes, buffer size: {len(stt_audio_buffer)}", uid, session_id)
                         stt_audio_buffer.extend(data)
                         await flush_stt_buffer()
 
